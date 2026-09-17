@@ -2,7 +2,9 @@
 
 Frontend de la aplicación de delivery, generado con [Angular CLI](https://github.com/angular/angular-cli) 22.1.2.
 
-Estado actual: **login con Google** (Google Identity Services) integrado contra el backend.
+Estado actual: **login con Google** (Google Identity Services) integrado contra el
+backend, con renovación de sesión automática y **countdown de expiración** de
+tokens visible en la UI.
 
 ## Stack
 
@@ -93,6 +95,26 @@ Commit `feat: implement Google login functionality with Auth service`
 - **Estilos** (`styles.css`): Tailwind 4 importado y color `secondary` definido en
   el tema.
 - **Tests**: `auth.spec.ts`, `app.spec.ts` y `toast.spec.ts`.
+
+### Countdown de sesión (último cambio)
+
+El `Auth` service expone dos métodos para conocer la vida restante de la sesión,
+sin tocar el backend:
+
+- **`getAccessTokenTtlMs()`**: decodifica el JWT (`decodeToken`) y calcula
+  `exp * 1000 - Date.now()`. Es exacto porque el `exp` viaja en el propio token.
+- **`getRefreshTokenTtlMs()`**: aproximado — el refresh token es opaco (string
+  aleatorio), su expiración real vive en la DB del backend. Al emitir una sesión,
+  `storeSession()` guarda `refresh_token_issued_at` en `localStorage` y se estima
+  el resto como `issuedAt + TTL (7 días) - now`.
+- **Claves en `localStorage`**: `access_token`, `refresh_token`,
+  `refresh_token_issued_at` y `user`.
+- **UI** (`app.ts` / `app.html`): en la vista logueada se muestra un panel con
+  `Access token: mm:ss` y `Refresh token: Xd HH:MM:SS` (o `expirado`), actualizado
+  cada segundo con `setInterval`. El timer arranca al restaurar sesión o iniciar
+  sesión, y se corta al cerrar sesión y con `OnDestroy`.
+- **Tests**: casos para ambos `getTtlMs` en `auth.spec.ts` y render del countdown
+  en `app.spec.ts`.
 
 ## Próximos pasos
 
