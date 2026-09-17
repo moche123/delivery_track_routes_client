@@ -73,24 +73,31 @@ Commit `feat: implement Google login functionality with Auth service`
 
 - **`Auth` service** (`src/app/services/auth/auth.ts`): carga el SDK de Google
   Identity Services de forma diferida, obtiene el `credential` y lo envía a
-  `POST {API_URL}/auth/login/google`. Guarda `access_token` y `user` en
-  `localStorage` y expone `getAccessToken()`.
+  `POST {API_URL}/auth/login/google`. Guarda `access_token`, `refresh_token` y
+  `user` en `localStorage`, mantiene el usuario en un `signal`, y expone
+  `restoreSession()`, `refreshSession()`, `logout()` y `clearSession()`.
+- **`authInterceptor`** (`src/app/services/auth/auth.interceptor.ts`): agrega el
+  header `Authorization: Bearer` y, ante un `401`, intenta refrescar la sesión una
+  vez (deduplicando refreshes concurrentes) y reintenta la request.
+- **Sesión al recargar**: `restoreSession()` valida el access token; si expiró
+  pero el refresh token sigue vivo, renueva la sesión contra `/auth/refresh`. Si
+  nada es válido, limpia el storage y muestra el botón de login con el mensaje
+  "Tu sesión expiró. Volvé a iniciar sesión.".
 - **`Toast` service** (`src/app/services/toast/toast.ts`): wrapper de `ngx-sonner`
   con `success`, `error` e `info`, para no depender de la librería directamente.
 - **Componente `App`** (`src/app/app.ts` / `app.html`): botón "Iniciar sesión con
-  Google"; al autenticarse muestra nombre, email y foto del usuario, y notifica
-  el resultado con toasts. El estado del usuario se maneja con `signal`.
-- **HTTP** (`app.config.ts`): `provideHttpClient()` para las llamadas al backend.
+  Google"; al autenticarse muestra nombre, email y foto del usuario, con botón
+  para **cerrar sesión**. El estado del usuario se maneja con `signal`.
+- **HTTP** (`app.config.ts`): `provideHttpClient(withInterceptors([authInterceptor]))`.
 - **Tipos globales** (`src/global.d.ts`): `window.__env` y `window.google`.
 - **Estilos** (`styles.css`): Tailwind 4 importado y color `secondary` definido en
   el tema.
-- **Tests**: `auth.spec.ts` cubre el `Auth` service.
+- **Tests**: `auth.spec.ts`, `app.spec.ts` y `toast.spec.ts`.
 
 ## Próximos pasos
 
 - Definir rutas y `auth guards` (`app.routes.ts` está vacío).
-- Interceptor HTTP para adjuntar el JWT en las peticiones.
-- Persistir/restaurar sesión al recargar y agregar logout.
+- Proteger vistas según el estado de la sesión.
 - Layout y vistas propias del flujo de delivery.
 
 ## Recursos
