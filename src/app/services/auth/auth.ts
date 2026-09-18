@@ -48,6 +48,7 @@ export class Auth {
     const session = await lastValueFrom(
       this.http.post<SessionResult>(`${API_URL}/auth/login/google`, {
         token: credential,
+        tipo: 'cliente',
       }),
     );
 
