@@ -53,9 +53,10 @@ describe('App', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Access token');
-    expect(compiled.textContent).toContain('Refresh token');
-    expect(compiled.textContent).toContain('Hola, Test');
+    expect(compiled.textContent).toContain('Access:');
+    expect(compiled.textContent).toContain('Refresh:');
+    expect(compiled.textContent).toContain('Test');
+    expect(compiled.textContent).toContain('Mis pedidos');
 
     fixture.destroy();
   });

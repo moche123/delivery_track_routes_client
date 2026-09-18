@@ -1,17 +1,19 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NgxSonnerToaster } from 'ngx-sonner';
 import { Auth } from './services/auth/auth';
 import { Toast } from './services/toast/toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, RouterLink, NgxSonnerToaster],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App implements OnInit, OnDestroy {
   private readonly auth = inject(Auth);
   private readonly toast = inject(Toast);
+  private readonly router = inject(Router);
   private tickTimer: ReturnType<typeof setInterval> | null = null;
 
   protected readonly user = this.auth.user;
@@ -30,6 +32,7 @@ export class App implements OnInit, OnDestroy {
       const user = await this.auth.loginGoogle();
       this.toast.success(`Bienvenido ${user.nombre}`);
       this.restartCountdown();
+      await this.router.navigateByUrl('/pedidos');
     } catch (error) {
       this.toast.error(
         `Error al iniciar sesión con Google: ${error instanceof Error ? error.message : String(error)}`,
@@ -41,6 +44,7 @@ export class App implements OnInit, OnDestroy {
     await this.auth.logout();
     this.toast.info('Sesión cerrada');
     this.stopCountdown();
+    await this.router.navigateByUrl('/');
   }
 
   ngOnDestroy(): void {

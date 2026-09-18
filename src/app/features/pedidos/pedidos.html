@@ -1,0 +1,320 @@
+<section class="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4 sm:p-6">
+  @if (pestana() !== 'editar') {
+    <div
+      class="flex w-full max-w-sm flex-col-reverse gap-4 sm:flex-row"
+    >
+      <div class="flex flex-1 flex-col gap-1">
+        <label class="text-sm font-medium text-gray-700" for="filtro-estado">
+          Filtrar por estado
+        </label>
+        <select
+          id="filtro-estado"
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-400"
+          [value]="filtroEstado()"
+          (change)="filtroEstado.set($any($event.target).value)"
+        >
+          @for (filtro of ['todos', 'no_asignado', 'asignado', 'entregado', 'eliminado']; track filtro) {
+            <option [value]="filtro">{{ filtro }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex gap-2">
+        <button
+          type="button"
+          (click)="cambiarPestana('crear')"
+          class="flex-1 rounded-lg px-4 py-2 text-sm font-medium sm:flex-none"
+          [class]="pestana() === 'crear'
+            ? 'bg-blue-500 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+        >
+          Crear
+        </button>
+        <button
+          type="button"
+          (click)="cambiarPestana('listar')"
+          class="flex-1 rounded-lg px-4 py-2 text-sm font-medium sm:flex-none"
+          [class]="pestana() === 'listar'
+            ? 'bg-blue-500 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+        >
+          Lista
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (pestana() === 'crear' || pestana() === 'editar') {
+    <form
+      (submit)="crear($event)"
+      class="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
+    >
+      <h2 class="text-lg font-semibold text-gray-900">
+        {{ pedidoEditando() ? 'Editar pedido' : 'Nuevo pedido' }}
+      </h2>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-gray-700" for="pedido-nombre">
+          Nombre del pedido
+        </label>
+        <input
+          id="pedido-nombre"
+          type="text"
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          placeholder="Ej: 2 pizzas familiares"
+          [value]="nombre()"
+          #nombreBox
+          (input)="nombre.set(nombreBox.value)"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-gray-700" for="pedido-region">
+            Región
+          </label>
+          <select
+            id="pedido-region"
+            class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-400"
+            [value]="regionSel()?.id ?? ''"
+            (change)="seleccionarRegion($any($event.target).value)"
+          >
+            <option value="" disabled>Elegí región</option>
+            @for (region of regiones(); track region.id) {
+              <option [value]="region.id">{{ region.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label
+            class="text-sm font-medium text-gray-700"
+            for="pedido-provincia"
+          >
+            Provincia
+          </label>
+          <select
+            id="pedido-provincia"
+            class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-100"
+            [value]="provinciaSel()?.id ?? ''"
+            [disabled]="!regionSel()"
+            (change)="seleccionarProvincia($any($event.target).value)"
+          >
+            <option value="" disabled>Elegí provincia</option>
+            @for (provincia of provincias(); track provincia.id) {
+              <option [value]="provincia.id">{{ provincia.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label
+            class="text-sm font-medium text-gray-700"
+            for="pedido-distrito"
+          >
+            Distrito
+          </label>
+          <select
+            id="pedido-distrito"
+            class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-gray-100"
+            [value]="distritoSel()?.id ?? ''"
+            [disabled]="!provinciaSel()"
+            (change)="seleccionarDistrito($any($event.target).value)"
+          >
+            <option value="" disabled>Elegí distrito</option>
+            @for (distrito of distritos(); track distrito.id) {
+              <option [value]="distrito.id">{{ distrito.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (distritoSel()) {
+        <div class="relative flex flex-col gap-1">
+          <label class="text-sm font-medium text-gray-700" for="pedido-busqueda">
+            Buscar lugar
+          </label>
+          <input
+            id="pedido-busqueda"
+            type="text"
+            autocomplete="off"
+            class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            placeholder="Ej: Plaza San Martín, Miraflores"
+            [value]="busqueda()"
+            (input)="onBusquedaInput($any($event.target).value)"
+          />
+          @if (buscandoLugar()) {
+            <span class="text-xs text-gray-500">Buscando…</span>
+          }
+          @if (resultadosBusqueda().length > 0) {
+            <ul
+              class="absolute top-full z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg"
+            >
+              @for (resultado of resultadosBusqueda(); track resultado.display_name) {
+                <li>
+                  <button
+                    type="button"
+                    (click)="elegirResultadoBusqueda(resultado)"
+                    class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    {{ resultado.display_name }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-gray-700">
+          Punto de entrega (tocá el mapa)
+        </label>
+        <div
+          #mapaDiv
+          class="z-0 h-72 w-full overflow-hidden rounded-xl border border-gray-300"
+        ></div>
+        @if (centrandoMapa()) {
+          <p class="text-xs text-gray-500">Centrando mapa en el distrito…</p>
+        }
+        <p class="text-xs text-gray-500">
+          Marcá el punto exacto: se guarda la latitud y longitud exactas.
+        </p>
+      </div>
+
+      @if (latlng()) {
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-1">
+            <span class="text-sm font-medium text-gray-700">
+              Coordenadas exactas
+            </span>
+            <code class="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+              {{ latlng()!.lat.toFixed(6) }}, {{ latlng()!.lng.toFixed(6) }}
+            </code>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <span class="text-sm font-medium text-gray-700">
+              Dirección detectada
+            </span>
+            @if (geocodificando()) {
+              <span class="text-sm text-gray-500">Detectando dirección…</span>
+            } @else {
+              <p class="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                {{ direccionDetectada() }}
+              </p>
+              <p class="text-sm text-gray-500">
+                Ubigeo: <code>{{ ubigeo() }}</code>
+              </p>
+            }
+          </div>
+        </div>
+      }
+
+      @if (destino()) {
+        <div class="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+          <span class="font-medium text-gray-900">Destino final:</span>
+          <code class="ml-2">{{ destino() }}</code>
+        </div>
+      }
+
+      <div class="flex gap-2">
+        <button
+          type="submit"
+          [disabled]="!puedeEnviar() || enviando()"
+          class="flex-1 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-gray-300 cursor-pointer"
+        >
+          {{
+            enviando()
+              ? 'Guardando…'
+              : pedidoEditando()
+                ? 'Guardar cambios'
+                : 'Enviar pedido'
+          }}
+        </button>
+        @if (pedidoEditando()) {
+          <button
+            type="button"
+            (click)="cancelarEdicion()"
+            [disabled]="enviando()"
+            class="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-100"
+          >
+            Cancelar
+          </button>
+        }
+      </div>
+    </form>
+  } @else if (pestana() === 'listar') {
+    <div class="flex flex-col gap-4">
+      @if (cargando()) {
+        <p class="text-sm text-gray-500">Cargando pedidos…</p>
+      } @else if (pedidos().length === 0) {
+        <p
+          class="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500"
+        >
+          Todavía no tenés pedidos. Creá el primero.
+        </p>
+      } @else {
+        <ul class="flex flex-col gap-3">
+          @for (pedido of pedidosFiltrados(); track pedido.id) {
+            <li
+              class="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="flex min-w-0 flex-col gap-1">
+                <p class="truncate text-sm font-semibold text-gray-900">
+                  #{{ pedido.id }} · {{ pedido.nombre }}
+                </p>
+                <p class="truncate text-sm text-gray-500">
+                  {{ destinoLugar(pedido.destino) }}
+                </p>
+                <div class="flex flex-wrap items-center gap-2">
+                  @if (
+                    pedido.estado !== 'eliminado' &&
+                    pedido.estado !== 'entregado'
+                  ) {
+                    <button
+                      type="button"
+                      (click)="iniciarEdicion(pedido)"
+                      class="text-xs font-medium text-blue-600 hover:underline cursor-pointer"
+                    >
+                      Cambiar de destino
+                    </button>
+                  }
+                  @if (
+                    pedido.ubicacion &&
+                    (pedido.estado === 'asignado' || pedido.estado === 'entregado')
+                  ) {
+                    <a
+                      [href]="urlMapa(pedido.ubicacion)"
+                      target="_blank"
+                      rel="noopener"
+                      class="text-xs font-medium text-green-600 hover:underline"
+                    >
+                      Ver rider en mapa
+                    </a>
+                  }
+                  <span
+                    class="rounded-full px-3 py-0.5 text-xs font-medium"
+                    [class]="estadoBadge[pedido.estado] ?? 'bg-gray-100 text-gray-700'"
+                  >
+                    {{ pedido.estado }}
+                  </span>
+                </div>
+              </div>
+
+              @if (pedido.estado !== 'eliminado') {
+                <button
+                  type="button"
+                  (click)="eliminar(pedido)"
+                  class="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100"
+                >
+                  Eliminar
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</section>
