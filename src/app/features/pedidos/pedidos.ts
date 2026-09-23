@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  OnDestroy,
   OnInit,
   ViewChild,
   afterNextRender,
@@ -15,6 +16,7 @@ import {
   type Pedido,
   type PedidoEstado,
 } from '../../services/pedidos/pedidos';
+import { RealtimeSocket } from '../../services/socket/socket';
 import { Toast } from '../../services/toast/toast';
 
 const UBIGEO_POR_DEFECTO = '000000';
@@ -77,9 +79,11 @@ const PIN_ICON = L.divIcon({
   selector: 'app-pedidos',
   templateUrl: './pedidos.html',
 })
-export class Pedidos implements OnInit {
+export class Pedidos implements OnInit, OnDestroy {
   private readonly pedidosService = inject(PedidosService);
+  private readonly socket = inject(RealtimeSocket);
   private readonly toast = inject(Toast);
+  private readonly desuscribirSocket: Array<() => void> = [];
 
   @ViewChild('mapaDiv', { static: false })
   private readonly mapaDiv!: ElementRef<HTMLDivElement>;
@@ -155,6 +159,31 @@ export class Pedidos implements OnInit {
   async ngOnInit(): Promise<void> {
     this.regiones.set(regions.all() as unknown as UbigeoItem[]);
     await this.cargar();
+
+    // Actualiza el pedido puntual en memoria cuando el rider lo toma/cancela/
+    // entrega — sin refetch completo. Si el pedido_id no está en mi lista
+    // (no es mío), el map() no encuentra nada y no hace nada.
+    this.desuscribirSocket.push(
+      this.socket.on('asignacion_pedido', (payload) =>
+        this.actualizarEstadoLocal(payload.pedido_id, 'asignado'),
+      ),
+      this.socket.on('cancelacion_pedido', (payload) =>
+        this.actualizarEstadoLocal(payload.pedido_id, 'no_asignado'),
+      ),
+      this.socket.on('pedido_entregado', (payload) =>
+        this.actualizarEstadoLocal(payload.pedido_id, 'entregado'),
+      ),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.desuscribirSocket.forEach((desuscribir) => desuscribir());
+  }
+
+  private actualizarEstadoLocal(pedidoId: number, estado: PedidoEstado): void {
+    this.pedidos.update((actuales) =>
+      actuales.map((p) => (p.id === pedidoId ? { ...p, estado } : p)),
+    );
   }
 
   seleccionarRegion(id: string): void {
