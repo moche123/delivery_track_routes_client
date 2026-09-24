@@ -182,7 +182,9 @@ export class Pedidos implements OnInit, OnDestroy {
 
   private actualizarEstadoLocal(pedidoId: number, estado: PedidoEstado, actualizadoEn: string): void {
     this.pedidos.update((actuales) =>
-      actuales.map((p) => (p.id === pedidoId ? { ...p, estado, actualizadoEn } : p)),
+      actuales
+        .map((p) => (p.id === pedidoId ? { ...p, estado, actualizadoEn } : p))
+        .sort((a, b) => new Date(a.actualizadoEn).getTime() - new Date(b.actualizadoEn).getTime()),
     );
   }
 
