@@ -16,15 +16,18 @@ export interface ActualizacionUbicacionPedidoPayload {
 export interface AsignacionPedidoPayload {
   pedido_id: number;
   driver_id: number;
+  actualizado_en: string;
 }
 
 export interface CancelacionPedidoPayload {
   pedido_id: number;
   cancelado_por: 'driver' | 'cliente';
+  actualizado_en: string;
 }
 
 export interface PedidoEntregadoPayload {
   pedido_id: number;
+  actualizado_en: string;
 }
 
 export interface ActualizacionRutaPedidoPayload {

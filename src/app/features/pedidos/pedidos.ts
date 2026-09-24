@@ -165,13 +165,13 @@ export class Pedidos implements OnInit, OnDestroy {
     // (no es mío), el map() no encuentra nada y no hace nada.
     this.desuscribirSocket.push(
       this.socket.on('asignacion_pedido', (payload) =>
-        this.actualizarEstadoLocal(payload.pedido_id, 'asignado'),
+        this.actualizarEstadoLocal(payload.pedido_id, 'asignado', payload.actualizado_en),
       ),
       this.socket.on('cancelacion_pedido', (payload) =>
-        this.actualizarEstadoLocal(payload.pedido_id, 'no_asignado'),
+        this.actualizarEstadoLocal(payload.pedido_id, 'no_asignado', payload.actualizado_en),
       ),
       this.socket.on('pedido_entregado', (payload) =>
-        this.actualizarEstadoLocal(payload.pedido_id, 'entregado'),
+        this.actualizarEstadoLocal(payload.pedido_id, 'entregado', payload.actualizado_en),
       ),
     );
   }
@@ -180,9 +180,9 @@ export class Pedidos implements OnInit, OnDestroy {
     this.desuscribirSocket.forEach((desuscribir) => desuscribir());
   }
 
-  private actualizarEstadoLocal(pedidoId: number, estado: PedidoEstado): void {
+  private actualizarEstadoLocal(pedidoId: number, estado: PedidoEstado, actualizadoEn: string): void {
     this.pedidos.update((actuales) =>
-      actuales.map((p) => (p.id === pedidoId ? { ...p, estado } : p)),
+      actuales.map((p) => (p.id === pedidoId ? { ...p, estado, actualizadoEn } : p)),
     );
   }
 
@@ -425,6 +425,10 @@ export class Pedidos implements OnInit, OnDestroy {
   destinoLugar(destino: string): string {
     const [, , lugar] = destino.split('|');
     return lugar ?? destino;
+  }
+
+  horaActualizacion(actualizadoEn: string): string {
+    return new Date(actualizadoEn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
   async crear(event: Event): Promise<void> {

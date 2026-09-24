@@ -17,6 +17,8 @@ export interface Pedido {
   estado: PedidoEstado;
   destino: string;
   foto: string | null;
+  /** Creación o última actualización (asignar/cancelar/entregar/editar) — ISO string. */
+  actualizadoEn: string;
 }
 
 export interface CrearPedidoInput {
