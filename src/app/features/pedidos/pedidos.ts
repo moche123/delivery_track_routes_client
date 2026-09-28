@@ -18,6 +18,7 @@ import {
 } from '../../services/pedidos/pedidos';
 import { RealtimeSocket } from '../../services/socket/socket';
 import { Toast } from '../../services/toast/toast';
+import { MapaPedidoModal } from './mapa-pedido-modal/mapa-pedido-modal';
 
 const UBIGEO_POR_DEFECTO = '000000';
 const CENTRO_LIMA: L.LatLngTuple = [-12.046374, -77.042793];
@@ -78,6 +79,7 @@ const PIN_ICON = L.divIcon({
 @Component({
   selector: 'app-pedidos',
   templateUrl: './pedidos.html',
+  imports: [MapaPedidoModal],
 })
 export class Pedidos implements OnInit, OnDestroy {
   private readonly pedidosService = inject(PedidosService);
@@ -91,6 +93,8 @@ export class Pedidos implements OnInit, OnDestroy {
   protected readonly pestana = signal<'crear' | 'listar' | 'editar'>('crear');
   protected readonly pestanaSet = this.pestana.set;
   protected readonly pedidoEditando = signal<Pedido | null>(null);
+  protected readonly pedidoEnMapa = signal<Pedido | null>(null);
+  protected readonly pedidoEntregadoModal = signal<Pedido | null>(null);
   protected readonly regionSel = signal<UbigeoItem | null>(null);
   protected readonly provinciaSel = signal<UbigeoItem | null>(null);
   protected readonly distritoSel = signal<UbigeoItem | null>(null);
@@ -170,9 +174,16 @@ export class Pedidos implements OnInit, OnDestroy {
       this.socket.on('cancelacion_pedido', (payload) =>
         this.actualizarEstadoLocal(payload.pedido_id, 'no_asignado', payload.actualizado_en),
       ),
-      this.socket.on('pedido_entregado', (payload) =>
-        this.actualizarEstadoLocal(payload.pedido_id, 'entregado', payload.actualizado_en),
-      ),
+      this.socket.on('pedido_entregado', (payload) => {
+        // Buscar ANTES de actualizar el estado — el nombre no cambia, pero
+        // así queda claro que es una lectura del estado previo al patch.
+        const pedido = this.pedidos().find((p) => p.id === payload.pedido_id);
+        this.actualizarEstadoLocal(payload.pedido_id, 'entregado', payload.actualizado_en);
+        // Si no es un pedido mío, `pedido` sale undefined — no mostrar modal ajeno.
+        if (pedido) {
+          this.pedidoEntregadoModal.set(pedido);
+        }
+      }),
     );
   }
 
@@ -419,14 +430,17 @@ export class Pedidos implements OnInit, OnDestroy {
     return null;
   }
 
-  urlMapa(coordenadas: string): string {
-    const [lat, lng] = coordenadas.split(',').map((v) => v.trim());
-    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
-  }
-
   destinoLugar(destino: string): string {
     const [, , lugar] = destino.split('|');
     return lugar ?? destino;
+  }
+
+  verEnMapa(pedido: Pedido): void {
+    this.pedidoEnMapa.set(pedido);
+  }
+
+  cerrarMapa(): void {
+    this.pedidoEnMapa.set(null);
   }
 
   horaActualizacion(actualizadoEn: string): string {

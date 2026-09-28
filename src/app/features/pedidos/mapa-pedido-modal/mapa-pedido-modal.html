@@ -1,0 +1,28 @@
+<div
+  class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+  (click)="cerrarModal()"
+>
+  <div
+    class="flex h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white sm:h-[600px] sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:shadow-xl"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+      <div class="min-w-0">
+        <p class="truncate text-sm font-semibold text-gray-900">{{ pedido.nombre }}</p>
+        <p class="truncate text-xs text-gray-500">
+          {{ esperandoRider() ? 'Esperando ubicación del rider…' : 'Rider en vivo' }}
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="cerrarModal()"
+        class="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 cursor-pointer"
+        aria-label="Cerrar"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div #mapaDiv class="w-full flex-1"></div>
+  </div>
+</div>

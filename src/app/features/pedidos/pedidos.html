@@ -280,18 +280,14 @@
                       Cambiar de destino
                     </button>
                   }
-                  @if (
-                    pedido.ubicacion &&
-                    (pedido.estado === 'asignado' || pedido.estado === 'entregado')
-                  ) {
-                    <a
-                      [href]="urlMapa(pedido.ubicacion)"
-                      target="_blank"
-                      rel="noopener"
-                      class="text-xs font-medium text-green-600 hover:underline"
+                  @if (pedido.estado === 'asignado') {
+                    <button
+                      type="button"
+                      (click)="verEnMapa(pedido)"
+                      class="text-xs font-medium text-green-600 hover:underline cursor-pointer"
                     >
                       Ver rider en mapa
-                    </a>
+                    </button>
                   }
                   <span
                     class="rounded-full px-3 py-0.5 text-xs font-medium"
@@ -315,6 +311,35 @@
           }
         </ul>
       }
+    </div>
+  }
+
+  @if (pedidoEnMapa(); as pedidoMapa) {
+    <app-mapa-pedido-modal [pedido]="pedidoMapa" (cerrar)="cerrarMapa()" />
+  }
+
+  @if (pedidoEntregadoModal(); as pedidoEntregado) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      (click)="pedidoEntregadoModal.set(null)"
+    >
+      <div
+        class="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl"
+        (click)="$event.stopPropagation()"
+      >
+        <p class="text-4xl">✅</p>
+        <p class="mt-3 text-lg font-semibold text-gray-900">
+          Pedido «{{ pedidoEntregado.nombre }}» entregado
+        </p>
+        <p class="mt-1 text-sm text-gray-500">#{{ pedidoEntregado.id }}</p>
+        <button
+          type="button"
+          (click)="pedidoEntregadoModal.set(null)"
+          class="mt-5 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer"
+        >
+          Aceptar
+        </button>
+      </div>
     </div>
   }
 </section>
